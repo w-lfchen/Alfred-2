@@ -1,8 +1,10 @@
 mod token;
 
 use poise::{
-    serenity_prelude::{self as serenity},
-    Prefix, PrefixFrameworkOptions,
+    serenity_prelude::{
+        self as serenity, Color, CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter,
+    },
+    CreateReply, Prefix, PrefixFrameworkOptions,
 };
 use token::TOKEN;
 
@@ -37,15 +39,33 @@ async fn define(
     let parsed = json::parse(&response.text().await?)?;
     // response structure: object with single entry called "list" containing a list of objects, simply extract the first definition from there
     let definition = &parsed["list"][0]["definition"];
-    // if null, no definition was found (or api changed i guess)
-    let response = if definition.is_string() {
-        definition.to_string()
+    // create embed with some data that is the same no matter the response
+    let author = ctx.author();
+    let embed = CreateEmbed::new()
+        .author(CreateEmbedAuthor::new("Urban Dictionary"))
+        .timestamp(ctx.created_at())
+        .footer({
+            let footer = CreateEmbedFooter::new(format!("Requested by {}", author.name));
+            match author.avatar_url() {
+                Some(url) => footer.icon_url(url),
+                None => footer,
+            }
+        });
+    // if json null, no definition was found (or api changed i guess)
+    let embed = if definition.is_string() {
+        // add the query results
+        embed
+            .color(Color::from_rgb(137, 180, 250))
+            .title(query)
+            .description(definition.to_string())
     } else {
-        // no string
-        String::from("Error: Alfred 2 was unable to find a definition")
+        // no string -> error message
+        embed
+            .color(Color::from_rgb(243, 139, 168))
+            .title(":x: No Definition found")
     };
-    // send response
-    ctx.reply(response).await?;
+    // send response with now fully built embed
+    ctx.send(CreateReply::default().embed(embed)).await?;
     Ok(())
 }
 
