@@ -2,16 +2,55 @@ mod token;
 
 use poise::{
     serenity_prelude::{
-        self as serenity, Color, CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter,
+        self as serenity, Color, CreateAttachment, CreateEmbed, CreateEmbedAuthor,
+        CreateEmbedFooter,
     },
     CreateReply, Prefix, PrefixFrameworkOptions,
 };
+use reqwest::Response;
 use token::TOKEN;
 
 // definitions copied from example
 struct Data {} // User data, which is stored and accessible in all command invocations
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
+
+/// alfred cat
+///
+/// This command fetches you a random cat from https://cataas.com/ :3
+/// More parameters might be added in the future.
+#[poise::command(slash_command, prefix_command, track_edits)]
+async fn cat(ctx: Context<'_>) -> Result<(), Error> {
+    // fetch a cat :3
+    let response = reqwest::get("https://cataas.com/cat").await?;
+    // determine filename, default to "cat.jpg"
+    // hopefully won't cause issues
+    let filename = match get_file_extension(&response) {
+        Some(extension) => format!("cat.{extension}"),
+        None => String::from("cat.jpg"),
+    };
+    // upload the file to discord's cdn
+    ctx.send(
+        CreateReply::default()
+            .attachment(CreateAttachment::bytes(response.bytes().await?, filename)),
+    )
+    .await?;
+    Ok(())
+}
+
+/// Attempt to get the file extension from a given reponse.
+/// Won't work for every file type, use with caution.
+///
+/// Example: Passing a response with the Content-Type header being set to "image/jpeg" will return "jpeg".
+fn get_file_extension(response: &Response) -> Option<&str> {
+    response
+        .headers()
+        .get("Content-Type")?
+        .to_str()
+        .ok()?
+        .split('/')
+        .nth(1)
+}
 
 /// alfred define
 #[poise::command(slash_command, prefix_command, track_edits)]
@@ -96,7 +135,7 @@ async fn main() {
     let framework = poise::Framework::builder()
         // set options
         .options(poise::FrameworkOptions {
-            commands: vec![define(), eminem(), kleanthis()],
+            commands: vec![cat(), define(), eminem(), kleanthis()],
             // set up prefix
             prefix_options: PrefixFrameworkOptions {
                 prefix: Some(String::from("alfred")),
