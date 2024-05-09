@@ -49,6 +49,14 @@ async fn define(
     Ok(())
 }
 
+/// alfred eminem
+#[poise::command(slash_command, prefix_command, track_edits)]
+async fn eminem(ctx: Context<'_>) -> Result<(), Error> {
+    ctx.say("https://media.tenor.com/-5B-JLo2q1cAAAAC/eminem-now-this-looks-like-a-job-for-me.gif")
+        .await?;
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() {
     // get some constant parameters
@@ -60,7 +68,7 @@ async fn main() {
     let framework = poise::Framework::builder()
         // set options
         .options(poise::FrameworkOptions {
-            commands: vec![define()],
+            commands: vec![define(), eminem()],
             // set up prefix
             prefix_options: PrefixFrameworkOptions {
                 prefix: Some(String::from("alfred")),
