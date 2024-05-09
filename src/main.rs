@@ -77,6 +77,14 @@ async fn eminem(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
+/// alfred kleanthis
+#[poise::command(slash_command, prefix_command, track_edits)]
+async fn kleanthis(ctx: Context<'_>) -> Result<(), Error> {
+    ctx.say("https://discordemoji.com/assets/emoji/KannaSip.png")
+        .await?;
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() {
     // get some constant parameters
@@ -88,7 +96,7 @@ async fn main() {
     let framework = poise::Framework::builder()
         // set options
         .options(poise::FrameworkOptions {
-            commands: vec![define(), eminem()],
+            commands: vec![define(), eminem(), kleanthis()],
             // set up prefix
             prefix_options: PrefixFrameworkOptions {
                 prefix: Some(String::from("alfred")),
