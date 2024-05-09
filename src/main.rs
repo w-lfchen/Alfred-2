@@ -64,7 +64,10 @@ async fn main() {
             // set up prefix
             prefix_options: PrefixFrameworkOptions {
                 prefix: Some(String::from("alfred")),
-                additional_prefixes: vec![Prefix::Literal("Alfred")],
+                additional_prefixes: vec![Prefix::Regex(
+                    regex::Regex::new(r"(?i)\balfred\b")
+                        .expect("error(prefixes): regex compilation failed for some reason"),
+                )],
                 mention_as_prefix: true,
                 execute_untracked_edits: true,
                 ignore_bots: false,
