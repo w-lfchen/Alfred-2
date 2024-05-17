@@ -1,4 +1,12 @@
+mod errors;
 mod token;
+
+use crate::errors::NoDolphinError;
+
+use std::{
+    fs::File,
+    io::{BufRead, BufReader},
+};
 
 use poise::{
     serenity_prelude::{
@@ -7,6 +15,7 @@ use poise::{
     },
     CreateReply, Prefix, PrefixFrameworkOptions,
 };
+use rand::seq::IteratorRandom;
 use reqwest::Response;
 use token::TOKEN;
 
@@ -14,6 +23,9 @@ use token::TOKEN;
 struct Data {} // User data, which is stored and accessible in all command invocations
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
+
+// TODO: maybe improve this as this path is relative to the current working directory
+const DOLPHIN_PATH: &str = "./resources/dolphins.txt";
 
 /// alfred cat
 ///
@@ -108,6 +120,19 @@ async fn define(
     Ok(())
 }
 
+/// alfred delfin
+#[poise::command(slash_command, prefix_command, track_edits)]
+async fn delfin(ctx: Context<'_>) -> Result<(), Error> {
+    let f = File::open(DOLPHIN_PATH)?;
+    let f = BufReader::new(f);
+    let dolphin = f
+        .lines()
+        .choose(&mut rand::thread_rng())
+        .ok_or(NoDolphinError)??;
+    ctx.say(dolphin).await?;
+    Ok(())
+}
+
 /// alfred eminem
 #[poise::command(slash_command, prefix_command, track_edits)]
 async fn eminem(ctx: Context<'_>) -> Result<(), Error> {
@@ -135,7 +160,7 @@ async fn main() {
     let framework = poise::Framework::builder()
         // set options
         .options(poise::FrameworkOptions {
-            commands: vec![cat(), define(), eminem(), kleanthis()],
+            commands: vec![cat(), define(), delfin(), eminem(), kleanthis()],
             // set up prefix
             prefix_options: PrefixFrameworkOptions {
                 prefix: Some(String::from("alfred")),
