@@ -1,4 +1,7 @@
+mod errors;
 mod token;
+
+use crate::errors::NoDolphinError;
 
 use std::{
     fs::File,
@@ -125,8 +128,7 @@ async fn delfin(ctx: Context<'_>) -> Result<(), Error> {
     let dolphin = f
         .lines()
         .choose(&mut rand::thread_rng())
-        // TODO: handle None case
-        .expect("no dolphin found")?;
+        .ok_or(NoDolphinError)??;
     ctx.say(dolphin).await?;
     Ok(())
 }
