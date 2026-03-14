@@ -127,7 +127,7 @@ async fn delfin(ctx: Context<'_>) -> Result<(), Error> {
     let f = BufReader::new(f);
     let dolphin = f
         .lines()
-        .choose(&mut rand::thread_rng())
+        .choose(&mut rand::rng())
         .ok_or(NoDolphinError)??;
     ctx.say(dolphin).await?;
     Ok(())

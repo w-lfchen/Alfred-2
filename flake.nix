@@ -18,9 +18,6 @@
           rustc
           rustfmt
           sccache
-
-          pkg-config
-          openssl
         ];
         RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
         shellHook = ''
@@ -33,11 +30,9 @@
       #    name = "alfred-2";
       #    src = ./.;
       #    cargoLock.lockFile = ./Cargo.lock;
-      #    buildInputs = with pkgs; [ openssl ];
-      #    nativeBuildInputs = with pkgs; [ pkg-config ];
       #  };
       #  default = self.packages.${system}.alfred-2;
       #};
-      formatter.${system} = pkgs.nixfmt-rfc-style;
+      formatter.${system} = pkgs.nixfmt;
     };
 }
