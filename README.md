@@ -6,8 +6,5 @@ Discord bot with the goal of reaching feature parity the geekhub bot Alfred.
 > Very WIP, I don't know how fast or even how much progress will be made.
 
 ## Usage
-Create the file `src/token.rs` with the following content:
-```rust
-pub const TOKEN: &str = "<put your token here, without the angled brackets>";
-```
-Then, simply build and run the program.
+1. Build the program.
+2. Running it requires the environment variable `BOT_TOKEN` to be set to the discord bot token. Using a `.env` file is supported.

@@ -1,11 +1,9 @@
 mod errors;
-mod token;
 
 use crate::errors::NoDolphinError;
 
 use std::{
-    fs::File,
-    io::{BufRead, BufReader},
+    env, fs::File, io::{BufRead, BufReader}
 };
 
 use poise::{
@@ -17,7 +15,6 @@ use poise::{
 };
 use rand::seq::IteratorRandom;
 use reqwest::Response;
-use token::TOKEN;
 
 // definitions copied from example
 struct Data {} // User data, which is stored and accessible in all command invocations
@@ -151,8 +148,9 @@ async fn kleanthis(ctx: Context<'_>) -> Result<(), Error> {
 
 #[tokio::main]
 async fn main() {
+    dotenvy::dotenv().unwrap();
     // get some constant parameters
-    let token = TOKEN;
+    let token = env::var("BOT_TOKEN").unwrap();
     let intents =
         serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT;
 

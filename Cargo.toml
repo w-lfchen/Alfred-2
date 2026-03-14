@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+dotenvy = "0.15.7"
 json = "0.12.4"
 poise = "0.6.1"
 rand = "0.10.0"

@@ -31,15 +31,23 @@
           ])
         ];
       };
-      # currently broken due to how the token is handeled
-      #packages.${system} = {
-      #  alfred-2 = pkgs.rustPlatform.buildRustPackage {
-      #    name = "alfred-2";
-      #    src = ./.;
-      #    cargoLock.lockFile = ./Cargo.lock;
-      #  };
-      #  default = self.packages.${system}.alfred-2;
-      #};
+      packages.${system} =
+        let
+          toolchain = fenix.packages.${system}.minimal.toolchain;
+          pkgs = nixpkgs.legacyPackages.${system};
+          rustPlatform = pkgs.makeRustPlatform {
+            cargo = toolchain;
+            rustc = toolchain;
+          };
+        in
+        {
+          alfred-2 = rustPlatform.buildRustPackage {
+            name = "alfred-2";
+            src = ./.;
+            cargoLock.lockFile = ./Cargo.lock;
+          };
+          default = self.packages.${system}.alfred-2;
+        };
       formatter.${system} = pkgs.nixfmt;
     };
 }

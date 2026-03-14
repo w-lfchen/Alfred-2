@@ -1,4 +1,4 @@
 /target
 result
-token.rs
+.env
 .direnv/
