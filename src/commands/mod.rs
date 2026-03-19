@@ -1,3 +1,5 @@
+mod typst;
+
 use crate::errors::NoDolphinError;
 
 use std::{
@@ -134,6 +136,20 @@ pub async fn eminem(ctx: Context<'_>) -> Result<(), anyhow::Error> {
 #[poise::command(slash_command, prefix_command, track_edits)]
 pub async fn kleanthis(ctx: Context<'_>) -> Result<(), anyhow::Error> {
     ctx.say("https://discordemoji.com/assets/emoji/KannaSip.png")
+        .await?;
+    Ok(())
+}
+
+/// render a typst document
+#[poise::command(slash_command, prefix_command, track_edits)]
+pub async fn typst(ctx: Context<'_>, document: Vec<String>) -> Result<(), anyhow::Error> {
+    // TODO: how do we correctly handle this parameter?
+    let document = match ctx {
+        Context::Application(_) => document.first().cloned().unwrap_or_default(),
+        Context::Prefix(ctx) => String::from(ctx.args),
+    };
+    let png = typst::render_png(document)?;
+    ctx.send(CreateReply::default().attachment(CreateAttachment::bytes(png, "rendered.png")))
         .await?;
     Ok(())
 }

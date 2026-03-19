@@ -6,7 +6,7 @@ use poise::{
     serenity_prelude::{ClientBuilder, GatewayIntents},
 };
 
-use crate::commands::{cat, define, delfin, eminem, kleanthis};
+use crate::commands::{cat, define, delfin, eminem, kleanthis, typst};
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
@@ -19,7 +19,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let framework = poise::Framework::builder()
         // set options
         .options(poise::FrameworkOptions {
-            commands: vec![cat(), define(), delfin(), eminem(), kleanthis()],
+            commands: vec![cat(), define(), delfin(), eminem(), kleanthis(), typst()],
             // set up prefix
             prefix_options: PrefixFrameworkOptions {
                 prefix: Some(String::from("alfred")),

@@ -11,4 +11,12 @@ poise = "0.6.1"
 rand = "0.10.0"
 regex = "1.10.4"
 reqwest = "0.13.2"
+time = "0.3.47"
 tokio = { version = "1.37.0", features = ["macros", "rt-multi-thread"] }
+# TODO: upgrade to a stable typst version once the next release happens
+typst = { git = "https://github.com/typst/typst", rev = "46dd440e3d77272a585fdca566a8dc23d605dc9e" }
+typst-kit = { git = "https://github.com/typst/typst", rev = "46dd440e3d77272a585fdca566a8dc23d605dc9e", features = [
+    "embedded-fonts",
+] }
+typst-layout = { git = "https://github.com/typst/typst", rev = "46dd440e3d77272a585fdca566a8dc23d605dc9e" }
+typst-render = { git = "https://github.com/typst/typst", rev = "46dd440e3d77272a585fdca566a8dc23d605dc9e" }
