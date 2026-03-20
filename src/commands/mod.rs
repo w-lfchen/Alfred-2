@@ -151,7 +151,7 @@ pub async fn typst(ctx: Context<'_>, document: Vec<String>) -> Result<(), anyhow
     let (doc, diagnostics) = typst::render_png(document)?;
     let mut reply = CreateReply::default().content(diagnostics);
     if let Some(png) = doc {
-        reply = reply.attachment(CreateAttachment::bytes(png, "rendered.png"))
+        reply = reply.attachment(CreateAttachment::bytes(png, "rendered.png"));
     }
     ctx.send(reply).await?;
     Ok(())

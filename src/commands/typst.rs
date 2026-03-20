@@ -3,8 +3,8 @@ use time::{PrimitiveDateTime, UtcDateTime};
 use typst::{
     Library, LibraryExt,
     diag::{FileResult, Severity, SourceDiagnostic, Warned},
-    ecow::EcoVec,
-    foundations::{Bytes, Datetime, Duration},
+    foundations::{Bytes, Datetime, Duration, Smart},
+    layout::{Em, Margin, PageElem, Sides},
     syntax::{FileId, RootedPath, Source, VirtualPath, VirtualRoot},
     text::{Font, FontBook},
     utils::LazyHash,
@@ -21,18 +21,22 @@ struct World {
 
 impl World {
     fn new(document: String) -> Self {
-        let mut y = FontStore::default();
-        y.extend(typst_kit::fonts::embedded());
-        /*
-        use std::{fs::File, io::Read, path::Path};
-        let mut c = String::new();
-        let mut f = File::open(Path::new("test.typ")).unwrap();
-        f.read_to_string(&mut c).unwrap();
-        */
+        let mut library = Library::default();
+        library.styles.set(PageElem::height, Smart::Auto);
+        library.styles.set(PageElem::width, Smart::Auto);
+        library.styles.set(
+            PageElem::margin,
+            Margin {
+                sides: Sides::splat(Some(Smart::Custom(Em::new(0.5).into()))),
+                ..Default::default()
+            },
+        );
+        let mut font_store = FontStore::default();
+        font_store.extend(typst_kit::fonts::embedded());
         let now = UtcDateTime::now();
         Self {
-            library: LazyHash::new(Library::default()),
-            fonts: y,
+            library: LazyHash::new(library),
+            fonts: font_store,
             source: Source::new(
                 FileId::unique(RootedPath::new(
                     VirtualRoot::Project,
@@ -85,22 +89,20 @@ impl typst::World for World {
 // render the text into a png
 // currently, only the first page is returned
 pub(super) fn render_png(document: String) -> Result<(Option<Vec<u8>>, String), anyhow::Error> {
-    let world = World::new(String::from("#set page(height: 400pt, width: 800pt)\n") + &document);
+    let world = World::new(document);
     let Warned { output, warnings } = typst::compile::<PagedDocument>(&world);
     Ok(match output {
         Ok(document) => {
             let first_page = document.pages().first().context("no first page found")?;
-            let png = typst_render::render(first_page, 4.0)
-                // .save_png(Path::new("a.png"))
-                .encode_png()?;
-            (Some(png), format_diagnostics(warnings))
+            let png = typst_render::render(first_page, 5.0).encode_png()?;
+            (Some(png), format_diagnostics(&warnings))
         }
-        Err(errors) => (None, format_diagnostics(errors)),
+        Err(errors) => (None, format_diagnostics(&errors)),
     })
 }
 
 /// basic formatting: new line for each warning
-fn format_diagnostics(diags: EcoVec<SourceDiagnostic>) -> String {
+fn format_diagnostics(diags: &[SourceDiagnostic]) -> String {
     diags.iter().fold(String::new(), |acc, s| {
         format!(
             "{acc}\n[{}] {}",
