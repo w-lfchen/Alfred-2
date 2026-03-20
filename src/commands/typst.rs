@@ -1,8 +1,9 @@
-use anyhow::{Context, anyhow};
+use anyhow::Context;
 use time::{PrimitiveDateTime, UtcDateTime};
 use typst::{
     Library, LibraryExt,
-    diag::FileResult,
+    diag::{FileResult, Severity, SourceDiagnostic, Warned},
+    ecow::EcoVec,
     foundations::{Bytes, Datetime, Duration},
     syntax::{FileId, RootedPath, Source, VirtualPath, VirtualRoot},
     text::{Font, FontBook},
@@ -83,16 +84,32 @@ impl typst::World for World {
 
 // render the text into a png
 // currently, only the first page is returned
-// TODO: display diagnostics to the user
 // TODO: change default page size
-pub(super) fn render_png(document: String) -> Result<Vec<u8>, anyhow::Error> {
+pub(super) fn render_png(document: String) -> Result<(Option<Vec<u8>>, String), anyhow::Error> {
     let world = World::new(document);
-    let document = typst::compile::<PagedDocument>(&world)
-        .output
-        .map_err(|_| anyhow!("compilation failed"))?;
-    let first_page = document.pages().first().context("no first page found")?;
-    typst_render::render(first_page, 2.0)
-        // .save_png(Path::new("a.png"))
-        .encode_png()
-        .map_err(From::from)
+    let Warned { output, warnings } = typst::compile::<PagedDocument>(&world);
+    Ok(match output {
+        Ok(document) => {
+            let first_page = document.pages().first().context("no first page found")?;
+            let png = typst_render::render(first_page, 2.0)
+                // .save_png(Path::new("a.png"))
+                .encode_png()?;
+            (Some(png), format_diagnostics(warnings))
+        }
+        Err(errors) => (None, format_diagnostics(errors)),
+    })
+}
+
+/// basic formatting: new line for each warning
+fn format_diagnostics(diags: EcoVec<SourceDiagnostic>) -> String {
+    diags.iter().fold(String::new(), |acc, s| {
+        format!(
+            "{acc}\n[{}] {}",
+            match s.severity {
+                Severity::Error => "error",
+                Severity::Warning => "warning",
+            },
+            &s.message,
+        )
+    })
 }

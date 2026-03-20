@@ -148,8 +148,11 @@ pub async fn typst(ctx: Context<'_>, document: Vec<String>) -> Result<(), anyhow
         Context::Application(_) => document.first().cloned().unwrap_or_default(),
         Context::Prefix(ctx) => String::from(ctx.args),
     };
-    let png = typst::render_png(document)?;
-    ctx.send(CreateReply::default().attachment(CreateAttachment::bytes(png, "rendered.png")))
-        .await?;
+    let (doc, diagnostics) = typst::render_png(document)?;
+    let mut reply = CreateReply::default().content(diagnostics);
+    if let Some(png) = doc {
+        reply = reply.attachment(CreateAttachment::bytes(png, "rendered.png"))
+    }
+    ctx.send(reply).await?;
     Ok(())
 }
