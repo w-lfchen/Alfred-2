@@ -84,14 +84,13 @@ impl typst::World for World {
 
 // render the text into a png
 // currently, only the first page is returned
-// TODO: change default page size
 pub(super) fn render_png(document: String) -> Result<(Option<Vec<u8>>, String), anyhow::Error> {
-    let world = World::new(document);
+    let world = World::new(String::from("#set page(height: 400pt, width: 800pt)\n") + &document);
     let Warned { output, warnings } = typst::compile::<PagedDocument>(&world);
     Ok(match output {
         Ok(document) => {
             let first_page = document.pages().first().context("no first page found")?;
-            let png = typst_render::render(first_page, 2.0)
+            let png = typst_render::render(first_page, 4.0)
                 // .save_png(Path::new("a.png"))
                 .encode_png()?;
             (Some(png), format_diagnostics(warnings))
