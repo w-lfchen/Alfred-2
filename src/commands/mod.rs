@@ -141,15 +141,24 @@ pub async fn kleanthis(ctx: Context<'_>) -> Result<(), anyhow::Error> {
 }
 
 /// render a typst document
-#[poise::command(slash_command, prefix_command, track_edits)]
-pub async fn typst(ctx: Context<'_>, document: Vec<String>) -> Result<(), anyhow::Error> {
-    // TODO: how do we correctly handle this parameter?
-    let document = match ctx {
-        Context::Application(_) => document.first().cloned().unwrap_or_default(),
-        Context::Prefix(ctx) => String::from(ctx.args),
-    };
-    let (doc, diagnostics) = typst::render_png(document)?;
-    let mut reply = CreateReply::default().content(diagnostics);
+#[poise::command(slash_command, prefix_command, track_edits, broadcast_typing)]
+pub async fn typst(ctx: Context<'_>, #[rest] document: String) -> Result<(), anyhow::Error> {
+    // don't block the current thread with a potentially long-running compilation
+    let join = tokio::task::spawn(async { typst::render_png(document) });
+    let mut reply = CreateReply::default();
+    let (doc, diagnostics) = join.await??;
+    if !diagnostics.is_empty() {
+        let embed = CreateEmbed::default().description(diagnostics);
+        reply = reply.embed(if doc.is_some() {
+            embed
+                .color(Color::from_rgb(249, 226, 175))
+                .title("Warnings")
+        } else {
+            embed
+                .color(Color::from_rgb(243, 139, 168))
+                .title("Compilation failed")
+        });
+    }
     if let Some(png) = doc {
         reply = reply.attachment(CreateAttachment::bytes(png, "rendered.png"));
     }
