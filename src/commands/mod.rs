@@ -144,7 +144,7 @@ pub async fn kleanthis(ctx: Context<'_>) -> Result<(), anyhow::Error> {
 #[poise::command(slash_command, prefix_command, track_edits, broadcast_typing)]
 pub async fn typst(ctx: Context<'_>, #[rest] document: String) -> Result<(), anyhow::Error> {
     // don't block the current thread with a potentially long-running compilation
-    let join = tokio::task::spawn(async { typst::render_png(trim_typst_doc(document)) });
+    let join = tokio::task::spawn_blocking(|| typst::render_png(trim_typst_doc(document)));
     let mut reply = CreateReply::default();
     let (doc, diagnostics) = join.await??;
     if !diagnostics.is_empty() {
