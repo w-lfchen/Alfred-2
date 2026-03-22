@@ -23,9 +23,15 @@ const DOLPHIN_PATH: &str = "./resources/dolphins.txt";
 
 /// alfred cat
 ///
-/// This command fetches you a random cat from https://cataas.com/ :3
+/// This command fetches you a random cat from <https://cataas.com/> :3
 /// More parameters might be added in the future.
-#[poise::command(slash_command, prefix_command, track_edits)]
+#[poise::command(
+    slash_command,
+    prefix_command,
+    track_edits,
+    broadcast_typing,
+    aliases("car")
+)]
 pub async fn cat(ctx: Context<'_>) -> Result<(), anyhow::Error> {
     // fetch a cat :3
     let response = reqwest::get("https://cataas.com/cat").await?;
