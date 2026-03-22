@@ -140,7 +140,9 @@ pub async fn kleanthis(ctx: Context<'_>) -> Result<(), anyhow::Error> {
     Ok(())
 }
 
-/// render a typst document
+/// render a typst document.
+///
+/// the document must not be empty and can either be plain text or a single- or multiline code block.
 #[poise::command(slash_command, prefix_command, track_edits, broadcast_typing)]
 pub async fn typst(ctx: Context<'_>, #[rest] document: String) -> Result<(), anyhow::Error> {
     // don't block the current thread with a potentially long-running compilation
