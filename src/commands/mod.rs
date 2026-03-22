@@ -1,3 +1,5 @@
+mod typst;
+
 use crate::errors::NoDolphinError;
 
 use std::{
@@ -136,4 +138,50 @@ pub async fn kleanthis(ctx: Context<'_>) -> Result<(), anyhow::Error> {
     ctx.say("https://discordemoji.com/assets/emoji/KannaSip.png")
         .await?;
     Ok(())
+}
+
+/// render a typst document.
+///
+/// the document must not be empty and can either be plain text or a single- or multiline code block.
+#[poise::command(slash_command, prefix_command, track_edits, broadcast_typing)]
+pub async fn typst(ctx: Context<'_>, #[rest] document: String) -> Result<(), anyhow::Error> {
+    // don't block the current thread with a potentially long-running compilation
+    let join = tokio::task::spawn_blocking(|| typst::render_png(trim_typst_doc(document)));
+    let mut reply = CreateReply::default();
+    let (doc, diagnostics) = join.await??;
+    if !diagnostics.is_empty() {
+        let embed = CreateEmbed::default().description(diagnostics);
+        reply = reply.embed(if doc.is_some() {
+            embed
+                .color(Color::from_rgb(249, 226, 175))
+                .title("Warnings")
+        } else {
+            embed
+                .color(Color::from_rgb(243, 139, 168))
+                .title("Compilation failed")
+        });
+    }
+    if let Some(png) = doc {
+        reply = reply.attachment(CreateAttachment::bytes(png, "rendered.png"));
+    }
+    ctx.send(reply).await?;
+    Ok(())
+}
+
+/// if the document text (excluding leading whitespace) is a discord code block (i.e. starts and ends with ` or ```),
+/// this function strips the code block and leading/trailing whitespace and returns a new [String].
+/// otherwise, the document is returned unchanged.
+fn trim_typst_doc(document: String) -> String {
+    let trimmed = document.trim();
+    if let Some(s) = trimmed.strip_prefix("```")
+        && let Some(trimmed) = s.strip_suffix("```")
+    {
+        String::from(trimmed)
+    } else if let Some(s) = trimmed.strip_prefix("`")
+        && let Some(trimmed) = s.strip_suffix("`")
+    {
+        String::from(trimmed)
+    } else {
+        document
+    }
 }
