@@ -141,7 +141,12 @@ pub async fn kleanthis(ctx: Context<'_>) -> Result<(), anyhow::Error> {
 ///
 /// the document must not be empty and can either be plain text or a single- or multiline code block.
 #[poise::command(slash_command, prefix_command, track_edits, broadcast_typing)]
-pub async fn typst(ctx: Context<'_>, #[rest] document: String) -> Result<(), anyhow::Error> {
+pub async fn typst(
+    ctx: Context<'_>,
+    #[rest]
+    #[description = "the document to render"]
+    document: String,
+) -> Result<(), anyhow::Error> {
     // don't block the current thread with a potentially long-running compilation
     let join = tokio::task::spawn_blocking(|| typst::render_png(trim_typst_doc(document)));
     let mut reply = CreateReply::default();
