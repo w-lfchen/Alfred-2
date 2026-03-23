@@ -65,23 +65,14 @@ fn get_file_extension(response: &Response) -> Option<&str> {
 }
 
 /// alfred define
-#[poise::command(slash_command, prefix_command, track_edits)]
+#[poise::command(slash_command, prefix_command, track_edits, broadcast_typing)]
 pub async fn define(
     ctx: Context<'_>,
-    #[description = "Query"] query: Vec<String>,
+    #[rest]
+    #[description = "what to define"]
+    query: Option<String>,
 ) -> Result<(), anyhow::Error> {
-    let query = match ctx {
-        // currently too lazy too properly parse this, this is the easy way out
-        Context::Application(_) => query
-            .iter()
-            // begin with some capacity for optimization
-            // this fold could probably be optimized
-            .fold(String::with_capacity(query.len()), |accu, val| {
-                accu + " " + val
-            }),
-        // just use the args in this case
-        Context::Prefix(ctx) => String::from(ctx.args),
-    };
+    let query = query.unwrap_or_default();
     // get the json response into a json object
     let response = reqwest::get(format!(
         "https://api.urbandictionary.com/v0/define?term={query}"
@@ -113,7 +104,7 @@ pub async fn define(
         // no string -> error message
         embed
             .color(Color::from_rgb(243, 139, 168))
-            .title(":x: No Definition found")
+            .title(format!("No definition found for \"{query}\""))
     };
     // send response with now fully built embed
     ctx.send(CreateReply::default().embed(embed)).await?;
