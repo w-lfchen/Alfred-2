@@ -1,7 +1,9 @@
 mod commands;
+mod config;
 mod errors;
 mod state;
 
+use anyhow::anyhow;
 use poise::{
     Prefix, PrefixFrameworkOptions,
     serenity_prelude::{ClientBuilder, GatewayIntents},
@@ -10,6 +12,7 @@ use tokio::sync::Mutex;
 
 use crate::{
     commands::{admin, cat, command_check, define, delfin, eminem, kleanthis, typst},
+    config::{CONFIG, Config},
     state::State,
 };
 
@@ -19,6 +22,10 @@ async fn main() -> Result<(), anyhow::Error> {
     // get some constant parameters
     let token = std::env::var("BOT_TOKEN")?;
     let intents = GatewayIntents::GUILD_MESSAGES | GatewayIntents::MESSAGE_CONTENT;
+    // set config
+    CONFIG
+        .set(Config::from_env()?)
+        .map_err(|_| anyhow!("config already set"))?;
 
     // create framework
     let framework = poise::Framework::builder()
