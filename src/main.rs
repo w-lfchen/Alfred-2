@@ -56,7 +56,13 @@ async fn main() -> Result<(), anyhow::Error> {
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                Ok(Mutex::<State>::default())
+                // try to read the config from path
+                let path = Config::get().state_path();
+                if std::fs::exists(path)? {
+                    State::read_from_disk(path).map(Mutex::new)
+                } else {
+                    Ok(Mutex::<State>::default())
+                }
             })
         })
         .build();

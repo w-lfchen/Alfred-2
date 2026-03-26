@@ -2,7 +2,7 @@
 
 use anyhow::{Context as _, bail};
 
-use crate::commands::Context;
+use crate::{commands::Context, config::Config};
 
 #[poise::command(slash_command, broadcast_typing)]
 pub async fn toggle_command(ctx: Context<'_>, name: String) -> Result<(), anyhow::Error> {
@@ -35,6 +35,7 @@ pub async fn toggle_command(ctx: Context<'_>, name: String) -> Result<(), anyhow
             ))
             .await?;
         }
+        lock.save_to_disk(Config::get().state_path()).await?;
     } else {
         // no command with this name was found
         ctx.say(format!("unknown command name: {name}")).await?;
