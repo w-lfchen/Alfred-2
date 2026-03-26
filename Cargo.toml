@@ -11,6 +11,8 @@ poise = "0.6.1"
 rand = "0.10.0"
 regex = "1.10.4"
 reqwest = "0.13.2"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
 time = "0.3.47"
 tokio = { version = "1.37.0", features = ["macros", "rt-multi-thread"] }
 # TODO: upgrade to a stable typst version once the next release happens

@@ -1,6 +1,7 @@
+pub mod admin;
 mod typst;
 
-use crate::errors::NoDolphinError;
+use crate::{errors::NoDolphinError, state::State};
 
 use std::{
     fs::File,
@@ -15,11 +16,21 @@ use poise::{
 };
 use rand::seq::IteratorRandom;
 use reqwest::Response;
+use tokio::sync::Mutex;
 
-type Context<'a> = poise::Context<'a, (), anyhow::Error>;
+type Context<'a> = poise::Context<'a, Mutex<State>, anyhow::Error>;
 
 // TODO: maybe improve this as this path is relative to the current working directory
 const DOLPHIN_PATH: &str = "./resources/dolphins.txt";
+
+pub async fn command_check(ctx: Context<'_>) -> Result<bool, anyhow::Error> {
+    let lock = ctx.data().lock().await;
+    Ok(ctx
+        .guild_id()
+        .and_then(|guild_id| lock.disabled_commands.get(&guild_id))
+        // if we are not in a guild or the guild wasn't found, the command is considered enabled
+        .is_none_or(|disabled_commands| !disabled_commands.contains(&ctx.command().name)))
+}
 
 /// alfred cat
 ///

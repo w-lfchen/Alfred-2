@@ -1,12 +1,20 @@
 mod commands;
+mod config;
 mod errors;
+mod state;
 
+use anyhow::anyhow;
 use poise::{
     Prefix, PrefixFrameworkOptions,
     serenity_prelude::{ClientBuilder, GatewayIntents},
 };
+use tokio::sync::Mutex;
 
-use crate::commands::{cat, define, delfin, eminem, kleanthis, typst};
+use crate::{
+    commands::{admin, cat, command_check, define, delfin, eminem, kleanthis, typst},
+    config::{CONFIG, Config},
+    state::State,
+};
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
@@ -14,12 +22,24 @@ async fn main() -> Result<(), anyhow::Error> {
     // get some constant parameters
     let token = std::env::var("BOT_TOKEN")?;
     let intents = GatewayIntents::GUILD_MESSAGES | GatewayIntents::MESSAGE_CONTENT;
+    // set config
+    CONFIG
+        .set(Config::from_env()?)
+        .map_err(|_| anyhow!("config already set"))?;
 
     // create framework
     let framework = poise::Framework::builder()
         // set options
         .options(poise::FrameworkOptions {
-            commands: vec![cat(), define(), delfin(), eminem(), kleanthis(), typst()],
+            commands: vec![
+                cat(),
+                define(),
+                delfin(),
+                eminem(),
+                kleanthis(),
+                typst(),
+                admin::toggle_command(),
+            ],
             // set up prefix
             prefix_options: PrefixFrameworkOptions {
                 prefix: Some(String::from("alfred")),
@@ -30,12 +50,19 @@ async fn main() -> Result<(), anyhow::Error> {
                 case_insensitive_commands: true,
                 ..Default::default()
             },
+            command_check: Some(|ctx| Box::pin(command_check(ctx))),
             ..Default::default()
         })
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                Ok(())
+                // try to read the config from path
+                let path = Config::get().state_path();
+                if std::fs::exists(path)? {
+                    State::read_from_disk(path).map(Mutex::new)
+                } else {
+                    Ok(Mutex::<State>::default())
+                }
             })
         })
         .build();
