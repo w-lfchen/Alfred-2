@@ -134,7 +134,7 @@ pub async fn delfin(ctx: Context<'_>) -> Result<(), anyhow::Error> {
 
 /// alfred dog
 ///
-/// fetctes a random dog from <https://dog.ceo/>
+/// fetches a random dog from <https://dog.ceo/>
 #[poise::command(slash_command, prefix_command, track_edits, broadcast_typing)]
 pub async fn dog(ctx: Context<'_>) -> Result<(), anyhow::Error> {
     let response = reqwest::get("https://dog.ceo/api/breeds/image/random").await?;
