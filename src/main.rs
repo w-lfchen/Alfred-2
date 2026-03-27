@@ -11,7 +11,7 @@ use poise::{
 use tokio::sync::Mutex;
 
 use crate::{
-    commands::{admin, cat, command_check, define, delfin, eminem, kleanthis, typst},
+    commands::{admin, cat, command_check, define, delfin, dog, eminem, kleanthis, typst},
     config::{CONFIG, Config},
     state::State,
 };
@@ -35,6 +35,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 cat(),
                 define(),
                 delfin(),
+                dog(),
                 eminem(),
                 kleanthis(),
                 typst(),

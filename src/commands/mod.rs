@@ -132,6 +132,22 @@ pub async fn delfin(ctx: Context<'_>) -> Result<(), anyhow::Error> {
     Ok(())
 }
 
+/// alfred dog
+///
+/// fetctes a random dog from <https://dog.ceo/>
+#[poise::command(slash_command, prefix_command, track_edits, broadcast_typing)]
+pub async fn dog(ctx: Context<'_>) -> Result<(), anyhow::Error> {
+    let response = reqwest::get("https://dog.ceo/api/breeds/image/random").await?;
+    let parsed = json::parse(&response.text().await?)?;
+    // structure as per https://dog.ceo/dog-api/documentation/random:
+    // json object with field "message" that is the link to the dog
+    match parsed["message"].as_str() {
+        Some(image_url) => ctx.say(image_url).await?,
+        None => ctx.say("api broke :(").await?,
+    };
+    Ok(())
+}
+
 /// alfred eminem
 #[poise::command(slash_command, prefix_command, track_edits)]
 pub async fn eminem(ctx: Context<'_>) -> Result<(), anyhow::Error> {
