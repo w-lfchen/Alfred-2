@@ -8,6 +8,7 @@ use std::{
     io::{BufRead, BufReader},
 };
 
+use anyhow::Context as _;
 use poise::{
     CreateReply,
     serenity_prelude::{
@@ -161,6 +162,39 @@ pub async fn eminem(ctx: Context<'_>) -> Result<(), anyhow::Error> {
 pub async fn kleanthis(ctx: Context<'_>) -> Result<(), anyhow::Error> {
     ctx.say("https://discordemoji.com/assets/emoji/KannaSip.png")
         .await?;
+    Ok(())
+}
+
+/// hard images
+///
+/// fetches a random hot post from <https://reddit.com/r/hardimages2>
+#[poise::command(slash_command, prefix_command, track_edits, broadcast_typing)]
+pub async fn tuff(ctx: Context<'_>) -> Result<(), anyhow::Error> {
+    // we might want to reuse this client across invocations
+    let client = reqwest::Client::builder()
+        // reddit requires a user agent and will block us if we don't provide one
+        .user_agent("alfred:2.0")
+        .build()?;
+    let response = client
+        .get("https://www.reddit.com/r/hardimages2/hot.json?limit=100")
+        .send()
+        .await?;
+    let parsed = json::parse(&response.text().await?)?;
+    // parse the array of children
+    let children = &parsed["data"]["children"];
+    if !children.is_array() {
+        ctx.say("failed to parse reddit response").await?;
+    }
+    let post = children
+        .members()
+        .choose(&mut rand::rng())
+        .context("failed to choose post")?;
+    // parse the post
+    ctx.say(match post["data"]["url"].as_str() {
+        Some(url) => url,
+        None => "failed to parse post",
+    })
+    .await?;
     Ok(())
 }
 
