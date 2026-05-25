@@ -248,3 +248,30 @@ fn trim_typst_doc(document: String) -> String {
         document
     }
 }
+
+/// alfred fox
+///
+/// This command fetches a random fluffy foxy with a 1/1000 chance of foxy jumpscare.
+#[poise::command(
+    slash_command,
+    prefix_command,
+    track_edits,
+    broadcast_typing,
+    aliases("floof")
+)]
+pub async fn fox(ctx: Context<'_>) -> Result<(), anyhow::Error> {
+    if rand::random_range(1..=1000) == 67 {
+        // scary foxy (ᗒᗣᗕ)՞
+        ctx.say("https://tenor.com/fZEGeo3lNTk.gif").await?;
+        return Ok(());
+    }
+    
+    // fluffy foxy (˶>⩊<˶)
+    let response = reqwest::get("https://randomfox.ca/floof/").await?;
+    let payload = json::parse(&response.text().await?)?;
+    ctx.say(match payload["image"].as_str() {
+        Some(s) => s,
+        None => "api bonkers :C",
+    }).await?;
+    Ok(())
+}

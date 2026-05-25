@@ -11,7 +11,7 @@ use poise::{
 use tokio::sync::Mutex;
 
 use crate::{
-    commands::{admin, cat, command_check, define, delfin, dog, eminem, kleanthis, tuff, typst},
+    commands::{admin, cat, command_check, define, delfin, dog, eminem, kleanthis, tuff, typst, fox},
     config::{CONFIG, Config},
     state::State,
 };
@@ -40,6 +40,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 kleanthis(),
                 typst(),
                 tuff(),
+                fox(),
                 admin::toggle_command(),
             ],
             // set up prefix
