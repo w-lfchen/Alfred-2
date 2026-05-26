@@ -168,23 +168,27 @@ pub async fn eminem(ctx: Context<'_>) -> Result<(), anyhow::Error> {
     aliases("floof")
 )]
 pub async fn fox(ctx: Context<'_>) -> Result<(), anyhow::Error> {
+    const FOX_API_ENDPOINT: &str = "https://randomfox.ca/floof/";
+
     if rand::random_range(1..=1000) == 67 {
         // scary foxy (ᗒᗣᗕ)՞
         ctx.say("https://tenor.com/fZEGeo3lNTk.gif").await?;
         return Ok(());
     }
-    
+
     // fluffy foxy (˶>⩊<˶)
-    const api_endpoint: &str = "https://randomfox.ca/floof/";
-    let response = reqwest::get(api_endpoint).await
-        .with_context(|| format!("Failed to get fox image from {}", api_endpoint))?;
+    let response = reqwest::get(FOX_API_ENDPOINT)
+        .await
+        .with_context(|| format!("Failed to fetch response from {FOX_API_ENDPOINT}"))?;
     let payload = &response.text().await?;
     let parsed = json::parse(payload)
-        .with_context(|| format!("Failed to parse response payload, expected json value instead got\n\n{}", payload))?;
-    ctx.say(match parsed["image"].as_str() {
-        Some(s) => s,
-        None => "api bonkers :C",
-    }).await?;
+        .with_context(|| format!("Failed to parse response payload:\n{payload}"))?;
+    ctx.say(
+        parsed["image"]
+            .as_str()
+            .unwrap_or("response has unexpected structure"),
+    )
+    .await?;
     Ok(())
 }
 
