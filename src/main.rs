@@ -11,7 +11,7 @@ use poise::{
 use tokio::sync::Mutex;
 
 use crate::{
-    commands::{admin, cat, command_check, define, delfin, dog, eminem, kleanthis, tuff, typst, fox},
+    commands::{admin, cat, command_check, define, delfin, dog, eminem, fox, kleanthis, tuff, typst},
     config::{CONFIG, Config},
     state::State,
 };
