@@ -175,9 +175,13 @@ pub async fn fox(ctx: Context<'_>) -> Result<(), anyhow::Error> {
     }
     
     // fluffy foxy (˶>⩊<˶)
-    let response = reqwest::get("https://randomfox.ca/floof/").await?;
-    let payload = json::parse(&response.text().await?)?;
-    ctx.say(match payload["image"].as_str() {
+    const api_endpoint: &str = "https://randomfox.ca/floof/";
+    let response = reqwest::get(api_endpoint).await
+        .with_context(|| format!("Failed to get fox image from {}", api_endpoint))?;
+    let payload = &response.text().await?;
+    let parsed = json::parse(payload)
+        .with_context(|| format!("Failed to parse response payload, expected json value instead got\n\n{}", payload))?;
+    ctx.say(match parsed["image"].as_str() {
         Some(s) => s,
         None => "api bonkers :C",
     }).await?;
