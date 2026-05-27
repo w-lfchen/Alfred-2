@@ -157,6 +157,41 @@ pub async fn eminem(ctx: Context<'_>) -> Result<(), anyhow::Error> {
     Ok(())
 }
 
+/// alfred fox
+///
+/// This command fetches a random fluffy foxy with a 1/1000 chance of foxy jumpscare.
+#[poise::command(
+    slash_command,
+    prefix_command,
+    track_edits,
+    broadcast_typing,
+    aliases("floof")
+)]
+pub async fn fox(ctx: Context<'_>) -> Result<(), anyhow::Error> {
+    const FOX_API_ENDPOINT: &str = "https://randomfox.ca/floof/";
+
+    if rand::random_range(1..=1000) == 67 {
+        // scary foxy (ᗒᗣᗕ)՞
+        ctx.say("https://tenor.com/fZEGeo3lNTk.gif").await?;
+        return Ok(());
+    }
+
+    // fluffy foxy (˶>⩊<˶)
+    let response = reqwest::get(FOX_API_ENDPOINT)
+        .await
+        .with_context(|| format!("Failed to fetch response from {FOX_API_ENDPOINT}"))?;
+    let payload = &response.text().await?;
+    let parsed = json::parse(payload)
+        .with_context(|| format!("Failed to parse response payload:\n{payload}"))?;
+    ctx.say(
+        parsed["image"]
+            .as_str()
+            .unwrap_or("response has unexpected structure"),
+    )
+    .await?;
+    Ok(())
+}
+
 /// alfred kleanthis
 #[poise::command(slash_command, prefix_command, track_edits)]
 pub async fn kleanthis(ctx: Context<'_>) -> Result<(), anyhow::Error> {
