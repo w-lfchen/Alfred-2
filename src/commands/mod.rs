@@ -214,6 +214,11 @@ pub async fn tuff(ctx: Context<'_>) -> Result<(), anyhow::Error> {
         .get("https://www.reddit.com/r/hardimages2/hot.json?limit=100")
         .send()
         .await?;
+    let code = response.status();
+    if !code.is_success() {
+        ctx.say(format!("unexpected response code: {code}\n-# note: if this is a 403, reddit has probably blocked us")).await?;
+        return Ok(());
+    }
     let parsed = json::parse(&response.text().await?)?;
     // parse the array of children
     let children = &parsed["data"]["children"];
@@ -225,10 +230,11 @@ pub async fn tuff(ctx: Context<'_>) -> Result<(), anyhow::Error> {
         .choose(&mut rand::rng())
         .context("failed to choose post")?;
     // parse the post
-    ctx.say(match post["data"]["url"].as_str() {
-        Some(url) => url,
-        None => "failed to parse post",
-    })
+    ctx.say(
+        post["data"]["url"]
+            .as_str()
+            .unwrap_or("failed to parse post"),
+    )
     .await?;
     Ok(())
 }
