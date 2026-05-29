@@ -12,7 +12,8 @@ use tokio::sync::Mutex;
 
 use crate::{
     commands::{
-        admin, cat, command_check, define, delfin, dog, eminem, fox, kleanthis, tuff, typst, send},
+        admin, cat, command_check, define, delfin, dog, eminem, fox, kleanthis, send, tuff, typst,
+    },
     config::{CONFIG, Config},
     state::State,
 };

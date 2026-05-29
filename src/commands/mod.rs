@@ -63,73 +63,84 @@ pub async fn cat(ctx: Context<'_>) -> Result<(), anyhow::Error> {
 }
 
 /// Fetches an animal with the name from Inat
-#[poise::command(
-    slash_command,
-    prefix_command,
-    track_edits,
-    broadcast_typing
-)]
-pub async fn send(
-    ctx: Context<'_>,
-    #[rest]
-    query: Option<String>,
-) -> Result<(), anyhow::Error> {
-
-    // Im using this a random number seed
-    let seed = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)?.as_secs();
+#[poise::command(slash_command, prefix_command, track_edits, broadcast_typing)]
+pub async fn send(ctx: Context<'_>, #[rest] query: Option<String>) -> Result<(), anyhow::Error> {
+    let seed = rand::random::<i64>();
 
     // just look for frogs if it finds nothing
     let animal = query.unwrap_or("frog".to_string());
 
-    // make request
-    let url = format!("https://api.inaturalist.org/v1/taxa/autocomplete?q={}&per_page=1", animal);
+    // make request that autocompletes the user input and gets a taxon id for a species that exists in Inaturalist
+    let url = format!(
+        "https://api.inaturalist.org/v1/taxa/autocomplete?q={}&per_page=1",
+        animal
+    );
     let response = reqwest::get(url).await?;
     let parsed = json::parse(&response.text().await?)?;
 
     // default is frogs
     let mut id = 20979;
     let taxon = &parsed["results"][0];
-    if !taxon.is_null(){
+    if !taxon.is_null() {
         id = taxon["id"].as_u64().unwrap_or(0);
     };
 
-    // term id 17 and term value id 18 searches for only alive animals 
+    // term id 17 and term value id 18 searches for only alive animals
     let mut photo_url = format!(
-         "https://api.inaturalist.org/v1/observations?taxon_id={}&quality_grade=research&order_by=random&per_page=1&seed={}&term_id=17&term_value_id=18",
-         id, seed
-     );
+        "https://api.inaturalist.org/v1/observations?taxon_id={}&quality_grade=research&order_by=random&per_page=1&seed={}&term_id=17&term_value_id=18",
+        id, seed
+    );
 
-    //plants cant be dead 47126 are all plants
-    if (!taxon["id"].is_null() && taxon["id"].as_u64() == Some(47126)) || (!taxon["ancestor_ids"].is_null() && taxon["ancestor_ids"]
-            .members()
-            .any(|v| v.as_u64() == Some(47126))) {
-               photo_url = format!(
-                "https://api.inaturalist.org/v1/observations?taxon_id={}&quality_grade=research&order_by=random&per_page=1&seed={}",
-                id, seed
-                );
-            }
+    // plants cant be dead everything with taxon id 47126 as an ancestor is a plant
+    if (!taxon["id"].is_null() && taxon["id"].as_u64() == Some(47126))
+        || (!taxon["ancestor_ids"].is_null()
+            && taxon["ancestor_ids"]
+                .members()
+                .any(|v| v.as_u64() == Some(47126)))
+    {
+        photo_url = format!(
+            "https://api.inaturalist.org/v1/observations?taxon_id={}&quality_grade=research&order_by=random&per_page=1&seed={}",
+            id, seed
+        );
+    }
 
     let photo_response = reqwest::get(photo_url).await?;
     let photo_parsed = json::parse(&photo_response.text().await?)?;
 
-    let mut photo_url = photo_parsed["results"][0]["observation_photos"][0]["photo"]["url"]
+    let photo_url = photo_parsed["results"][0]["observation_photos"][0]["photo"]["url"]
         .as_str()
         .map(|u| u.replace("square", "large"))
         .unwrap();
 
-    // id 47118 are arachnids
-    if (!taxon["id"].is_null() && taxon["id"].as_u64() == Some(47118)) || (!taxon["ancestor_ids"].is_null() && taxon["ancestor_ids"]
-            .members()
-            .any(|v| v.as_u64() == Some(47118))) {
-                photo_url = format!("|| {} ||", photo_url)
-            };
-    
-    let name_of_obs = &photo_parsed["results"][0]["taxon"]["preferred_common_name"].as_str().unwrap_or(photo_parsed["results"][0]["taxon"]["name"].as_str().unwrap());
-    
-    // post the image with the name
+    //get image
+    let img = reqwest::get(&photo_url).await?.bytes().await?;
+
+    let name_of_obs = &photo_parsed["results"][0]["taxon"]["preferred_common_name"]
+        .as_str()
+        .unwrap_or(
+            photo_parsed["results"][0]["taxon"]["name"]
+                .as_str()
+                .unwrap(),
+        );
+
+    // post the name of the species
     ctx.say(format!("Image of {}", name_of_obs)).await?;
 
-    ctx.say(photo_url).await?;
+    // id 47118 are arachnids
+    if (!taxon["id"].is_null() && taxon["id"].as_u64() == Some(47118))
+        || (!taxon["ancestor_ids"].is_null()
+            && taxon["ancestor_ids"]
+                .members()
+                .any(|v| v.as_u64() == Some(47118)))
+    {
+        ctx.send(
+            CreateReply::default().attachment(CreateAttachment::bytes(img, "SPOILER_Spider.jpg")),
+        )
+        .await?;
+    } else {
+        ctx.send(CreateReply::default().attachment(CreateAttachment::bytes(img, "Image.jpg")))
+            .await?;
+    }
 
     Ok(())
 }
