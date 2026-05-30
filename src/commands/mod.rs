@@ -78,12 +78,9 @@ pub async fn send(ctx: Context<'_>, #[rest] query: Option<String>) -> Result<(),
     let response = reqwest::get(url).await?;
     let parsed = json::parse(&response.text().await?)?;
 
-    // default is frogs
-    let mut id = 20979;
     let taxon = &parsed["results"][0];
-    if !taxon.is_null() {
-        id = taxon["id"].as_u64().unwrap_or(0);
-    };
+    // default is frogs (id 20979)
+    let id = taxon["id"].as_u64().unwrap_or(20979);
 
     // term id 17 and term value id 18 searches for only alive animals
     let mut photo_url = format!(
@@ -91,12 +88,11 @@ pub async fn send(ctx: Context<'_>, #[rest] query: Option<String>) -> Result<(),
         id, seed
     );
 
-    // plants cant be dead everything with taxon id 47126 as an ancestor is a plant
-    if (!taxon["id"].is_null() && taxon["id"].as_u64() == Some(47126))
-        || (!taxon["ancestor_ids"].is_null()
-            && taxon["ancestor_ids"]
-                .members()
-                .any(|v| v.as_u64() == Some(47126)))
+    // plants can't be dead; everything with taxon id 47126 as an ancestor is a plant
+    if taxon["id"].as_u64() == Some(47126)
+        || taxon["ancestor_ids"]
+            .members()
+            .any(|v| v.as_u64() == Some(47126))
     {
         photo_url = format!(
             "https://api.inaturalist.org/v1/observations?taxon_id={}&quality_grade=research&order_by=random&per_page=1&seed={}",
@@ -127,11 +123,10 @@ pub async fn send(ctx: Context<'_>, #[rest] query: Option<String>) -> Result<(),
     ctx.say(format!("Image of {}", name_of_obs)).await?;
 
     // id 47118 are arachnids
-    if (!taxon["id"].is_null() && taxon["id"].as_u64() == Some(47118))
-        || (!taxon["ancestor_ids"].is_null()
-            && taxon["ancestor_ids"]
-                .members()
-                .any(|v| v.as_u64() == Some(47118)))
+    if taxon["id"].as_u64() == Some(47118)
+        || taxon["ancestor_ids"]
+            .members()
+            .any(|v| v.as_u64() == Some(47118))
     {
         ctx.send(
             CreateReply::default().attachment(CreateAttachment::bytes(img, "SPOILER_Spider.jpg")),
