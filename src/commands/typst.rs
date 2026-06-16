@@ -7,10 +7,11 @@ use typst::{
     layout::{Em, Margin, PageElem, Sides},
     syntax::{FileId, RootedPath, Source, VirtualPath, VirtualRoot},
     text::{Font, FontBook},
-    utils::LazyHash,
+    utils::{LazyHash, Scalar},
 };
 use typst_kit::fonts::FontStore;
 use typst_layout::PagedDocument;
+use typst_render::RenderOptions;
 
 struct World {
     library: LazyHash<Library>,
@@ -26,10 +27,10 @@ impl World {
         library.styles.set(PageElem::width, Smart::Auto);
         library.styles.set(
             PageElem::margin,
-            Margin {
+            Smart::Custom(Margin {
                 sides: Sides::splat(Some(Smart::Custom(Em::new(0.5).into()))),
                 ..Default::default()
-            },
+            }),
         );
         let mut font_store = FontStore::default();
         font_store.extend(typst_kit::fonts::embedded());
@@ -94,7 +95,14 @@ pub(super) fn render_png(document: String) -> Result<(Option<Vec<u8>>, String), 
     Ok(match output {
         Ok(document) => {
             let first_page = document.pages().first().context("no first page found")?;
-            let png = typst_render::render(first_page, 5.0).encode_png()?;
+            let png = typst_render::render(
+                first_page,
+                &RenderOptions {
+                    pixel_per_pt: Scalar::new(5.0),
+                    ..Default::default()
+                },
+            )
+            .encode_png()?;
             (Some(png), format_diagnostics(&warnings))
         }
         Err(errors) => (None, format_diagnostics(&errors)),
