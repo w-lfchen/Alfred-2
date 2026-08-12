@@ -62,42 +62,41 @@ pub async fn cat(ctx: Context<'_>) -> Result<(), anyhow::Error> {
     Ok(())
 }
 
-/// Fetches an animal with the name from Inat
+/// Fetches an animal from Inaturalist
 #[poise::command(slash_command, prefix_command, track_edits, broadcast_typing)]
 pub async fn send(ctx: Context<'_>, #[rest] query: Option<String>) -> Result<(), anyhow::Error> {
+    // everything with taxon id 47126 as an ancestor is a plant
+    const PLANT_ID: u64 = 47126;
+    const ARACHNID_ID: u64 = 47118;
+    // default to frogs
+    const DEFAULT_QUERY: &str = "frog";
+    const FROG_ID: u64 = 20979;
+
     let seed = rand::random::<i64>();
 
     // just look for frogs if it finds nothing
-    let animal = query.unwrap_or("frog".to_string());
+    let animal = query.as_deref().unwrap_or(DEFAULT_QUERY);
 
     // make request that autocompletes the user input and gets a taxon id for a species that exists in Inaturalist
-    let url = format!(
-        "https://api.inaturalist.org/v1/taxa/autocomplete?q={}&per_page=1",
-        animal
-    );
+    let url = format!("https://api.inaturalist.org/v1/taxa/autocomplete?q={animal}&per_page=1");
     let response = reqwest::get(url).await?;
     let parsed = json::parse(&response.text().await?)?;
 
     let taxon = &parsed["results"][0];
-    // default is frogs (id 20979)
-    let id = taxon["id"].as_u64().unwrap_or(20979);
+    let id = taxon["id"].as_u64().unwrap_or(FROG_ID);
 
-    // term id 17 and term value id 18 searches for only alive animals
     let mut photo_url = format!(
-        "https://api.inaturalist.org/v1/observations?taxon_id={}&quality_grade=research&order_by=random&per_page=1&seed={}&term_id=17&term_value_id=18",
-        id, seed
+        "https://api.inaturalist.org/v1/observations?taxon_id={id}&quality_grade=research&order_by=random&per_page=1&seed={seed}"
     );
 
-    // plants can't be dead; everything with taxon id 47126 as an ancestor is a plant
-    if taxon["id"].as_u64() == Some(47126)
-        || taxon["ancestor_ids"]
+    // plants can't be dead
+    if id != PLANT_ID
+        && taxon["ancestor_ids"]
             .members()
-            .any(|v| v.as_u64() == Some(47126))
+            .all(|v| v.as_u64() != Some(PLANT_ID))
     {
-        photo_url = format!(
-            "https://api.inaturalist.org/v1/observations?taxon_id={}&quality_grade=research&order_by=random&per_page=1&seed={}",
-            id, seed
-        );
+        // term id 17 and term value id 18 searches for only alive animals
+        photo_url.push_str("&term_id=17&term_value_id=18");
     }
 
     let photo_response = reqwest::get(photo_url).await?;
@@ -106,37 +105,33 @@ pub async fn send(ctx: Context<'_>, #[rest] query: Option<String>) -> Result<(),
     let photo_url = photo_parsed["results"][0]["observation_photos"][0]["photo"]["url"]
         .as_str()
         .map(|u| u.replace("square", "large"))
-        .unwrap();
+        .context("failed to get photo url")?;
 
-    //get image
+    // get image
     let img = reqwest::get(&photo_url).await?.bytes().await?;
 
-    let name_of_obs = &photo_parsed["results"][0]["taxon"]["preferred_common_name"]
+    let name_of_observation = photo_parsed["results"][0]["taxon"]["preferred_common_name"]
         .as_str()
-        .unwrap_or(
-            photo_parsed["results"][0]["taxon"]["name"]
-                .as_str()
-                .unwrap(),
-        );
+        .or(photo_parsed["results"][0]["taxon"]["name"].as_str())
+        .context("failed to get observation name")?;
 
-    // post the name of the species
-    ctx.say(format!("Image of {}", name_of_obs)).await?;
-
-    // id 47118 are arachnids
-    if taxon["id"].as_u64() == Some(47118)
-        || taxon["ancestor_ids"]
-            .members()
-            .any(|v| v.as_u64() == Some(47118))
-    {
-        ctx.send(
-            CreateReply::default().attachment(CreateAttachment::bytes(img, "SPOILER_Spider.jpg")),
-        )
-        .await?;
-    } else {
-        ctx.send(CreateReply::default().attachment(CreateAttachment::bytes(img, "Image.jpg")))
-            .await?;
-    }
-
+    let msg = CreateReply::default()
+        .content(format!("Image of {name_of_observation}"))
+        .attachment(CreateAttachment::bytes(
+            img,
+            // id 47118 are arachnids
+            if id == ARACHNID_ID
+                || taxon["ancestor_ids"]
+                    .members()
+                    .any(|v| v.as_u64() == Some(ARACHNID_ID))
+            {
+                // mark as spoiler
+                "SPOILER_spider.jpg"
+            } else {
+                "image.jpg"
+            },
+        ));
+    ctx.send(msg).await?;
     Ok(())
 }
 
