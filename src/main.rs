@@ -12,7 +12,7 @@ use tokio::sync::Mutex;
 
 use crate::{
     commands::{
-        admin, cat, command_check, define, delfin, dog, eminem, fox, kleanthis, tuff, typst,
+        admin, cat, command_check, define, delfin, dog, eminem, fox, kleanthis, send, tuff, typst,
     },
     config::{CONFIG, Config},
     state::State,
@@ -43,6 +43,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 typst(),
                 tuff(),
                 fox(),
+                send(),
                 admin::toggle_command(),
             ],
             // set up prefix
