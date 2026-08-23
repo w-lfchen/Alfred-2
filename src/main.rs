@@ -3,7 +3,7 @@ mod config;
 mod errors;
 mod state;
 
-use anyhow::anyhow;
+use anyhow::{Context, anyhow};
 use poise::{
     Prefix, PrefixFrameworkOptions,
     serenity_prelude::{ClientBuilder, GatewayIntents},
@@ -20,9 +20,14 @@ use crate::{
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
-    dotenvy::dotenv()?;
+    if let Err(e) = dotenvy::dotenv()
+        && !e.not_found()
+    {
+        return Err(anyhow::Error::new(e));
+    }
     // get some constant parameters
-    let token = std::env::var("BOT_TOKEN")?;
+    let token =
+        std::env::var("BOT_TOKEN").context("failed to read BOT_TOKEN environment variable")?;
     let intents = GatewayIntents::GUILD_MESSAGES | GatewayIntents::MESSAGE_CONTENT;
     // set config
     CONFIG
