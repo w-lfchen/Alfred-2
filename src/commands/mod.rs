@@ -1,7 +1,7 @@
 pub mod admin;
 mod typst;
 
-use crate::{errors::NoDolphinError, state::State};
+use crate::{config::Config, errors::NoDolphinError, state::State};
 
 use std::{
     fs::File,
@@ -20,9 +20,6 @@ use reqwest::Response;
 use tokio::sync::Mutex;
 
 type Context<'a> = poise::Context<'a, Mutex<State>, anyhow::Error>;
-
-// TODO: maybe improve this as this path is relative to the current working directory
-const DOLPHIN_PATH: &str = "./resources/dolphins.txt";
 
 pub async fn command_check(ctx: Context<'_>) -> Result<bool, anyhow::Error> {
     let lock = ctx.data().lock().await;
@@ -199,7 +196,7 @@ pub async fn define(
 /// alfred delfin
 #[poise::command(slash_command, prefix_command, track_edits)]
 pub async fn delfin(ctx: Context<'_>) -> Result<(), anyhow::Error> {
-    let f = File::open(DOLPHIN_PATH)?;
+    let f = File::open(Config::get().dolphin_path())?;
     let f = BufReader::new(f);
     let dolphin = f.lines().choose(&mut rand::rng()).ok_or(NoDolphinError)??;
     ctx.say(dolphin).await?;
