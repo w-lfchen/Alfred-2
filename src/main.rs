@@ -1,5 +1,6 @@
 mod commands;
 mod config;
+mod db;
 mod errors;
 mod state;
 
@@ -33,6 +34,9 @@ async fn main() -> Result<(), anyhow::Error> {
     CONFIG
         .set(Config::from_env()?)
         .map_err(|_| anyhow!("config already set"))?;
+
+    // TODO: integrate state into pool
+    let _ = db::setup_db().await?;
 
     // create framework
     let framework = poise::Framework::builder()
