@@ -3,7 +3,6 @@ mod config;
 mod data;
 mod db;
 mod errors;
-mod state;
 
 use anyhow::{Context, anyhow};
 use poise::{
