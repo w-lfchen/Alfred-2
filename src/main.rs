@@ -1,21 +1,21 @@
 mod commands;
 mod config;
+mod data;
+mod db;
 mod errors;
-mod state;
 
 use anyhow::{Context, anyhow};
 use poise::{
     Prefix, PrefixFrameworkOptions,
     serenity_prelude::{ClientBuilder, GatewayIntents},
 };
-use tokio::sync::Mutex;
 
 use crate::{
     commands::{
         admin, cat, command_check, define, delfin, dog, eminem, fox, kleanthis, send, tuff, typst,
     },
     config::{CONFIG, Config},
-    state::State,
+    data::Data,
 };
 
 #[tokio::main]
@@ -33,6 +33,8 @@ async fn main() -> Result<(), anyhow::Error> {
     CONFIG
         .set(Config::from_env()?)
         .map_err(|_| anyhow!("config already set"))?;
+
+    let pool = db::setup_db().await?;
 
     // create framework
     let framework = poise::Framework::builder()
@@ -67,13 +69,7 @@ async fn main() -> Result<(), anyhow::Error> {
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                // try to read the config from path
-                let path = Config::get().state_path();
-                if std::fs::exists(path)? {
-                    State::read_from_disk(path).map(Mutex::new)
-                } else {
-                    Ok(Mutex::<State>::default())
-                }
+                Ok(Data::new(pool))
             })
         })
         .build();

@@ -2,7 +2,7 @@
 
 use anyhow::{Context as _, bail};
 
-use crate::{commands::Context, config::Config};
+use crate::{commands::Context, db};
 
 #[poise::command(slash_command, broadcast_typing)]
 pub async fn toggle_command(ctx: Context<'_>, name: String) -> Result<(), anyhow::Error> {
@@ -20,22 +20,12 @@ pub async fn toggle_command(ctx: Context<'_>, name: String) -> Result<(), anyhow
         .find(|command| command.name == name)
         .is_some()
     {
-        let mut lock = ctx.data().lock().await;
-        let disabled_commands = lock.disabled_commands.entry(guild_id).or_default();
-        if disabled_commands.contains(&name) {
-            disabled_commands.remove(&name);
-            ctx.say(format!(
-                "command successfully enabled.\ncurrently disabled commands: {disabled_commands:?}"
-            ))
-            .await?;
-        } else {
-            disabled_commands.insert(name);
-            ctx.say(format!(
-                "command successfully disabled.\ncurrently disabled commands: {disabled_commands:?}",
-            ))
-            .await?;
-        }
-        lock.save_to_disk(Config::get().state_path()).await?;
+        let enabled = db::toggle(ctx.data().pool(), guild_id, &name).await?;
+        ctx.say(format!(
+            "command `{name}` has been successfully {}abled.",
+            if enabled { "en" } else { "dis" }
+        ))
+        .await?;
     } else {
         // no command with this name was found
         ctx.say(format!("unknown command name: {name}")).await?;

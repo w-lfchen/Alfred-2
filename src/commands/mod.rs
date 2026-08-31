@@ -1,7 +1,7 @@
 pub mod admin;
 mod typst;
 
-use crate::{config::Config, errors::NoDolphinError, state::State};
+use crate::{config::Config, data::Data, db, errors::NoDolphinError};
 
 use std::{
     fs::File,
@@ -17,17 +17,20 @@ use poise::{
 };
 use rand::seq::IteratorRandom;
 use reqwest::Response;
-use tokio::sync::Mutex;
 
-type Context<'a> = poise::Context<'a, Mutex<State>, anyhow::Error>;
+type Context<'a> = poise::Context<'a, Data, anyhow::Error>;
 
+/// returns whether the command is allowed to run
 pub async fn command_check(ctx: Context<'_>) -> Result<bool, anyhow::Error> {
-    let lock = ctx.data().lock().await;
-    Ok(ctx
-        .guild_id()
-        .and_then(|guild_id| lock.disabled_commands.get(&guild_id))
-        // if we are not in a guild or the guild wasn't found, the command is considered enabled
-        .is_none_or(|disabled_commands| !disabled_commands.contains(&ctx.command().name)))
+    Ok(if let Some(id) = ctx.guild_id() {
+        let enabled = db::is_enabled(ctx.data().pool(), id, &ctx.command().name).await?;
+        if !enabled {
+            ctx.say("command is disabled").await?;
+        }
+        enabled
+    } else {
+        true
+    })
 }
 
 /// alfred cat

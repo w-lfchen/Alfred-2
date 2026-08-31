@@ -11,19 +11,20 @@ pub static CONFIG: OnceLock<Config> = OnceLock::new();
 #[derive(Debug)]
 pub struct Config {
     dolphin_path: PathBuf,
-    state_path: PathBuf,
+    state_dir: PathBuf,
 }
 
 impl Config {
     /// create a new config by parsing environment variables:
-    /// - `STATE_PATH` for the path where state should be saved
+    /// - `DOLPHIN_PATH` for the path to the dolphin file
+    /// - `STATE_DIR` for the directory where state should be saved
     pub fn from_env() -> Result<Self, anyhow::Error> {
         Ok(Self {
             dolphin_path: std::env::var("DOLPHIN_PATH")
                 .context("failed to read DOLPHIN_PATH environment variable")?
                 .into(),
-            state_path: std::env::var("STATE_PATH")
-                .context("failed to read STATE_PATH environment variable")?
+            state_dir: std::env::var("STATE_DIR")
+                .context("failed to read STATE_DIR environment variable")?
                 .into(),
         })
     }
@@ -35,8 +36,8 @@ impl Config {
         CONFIG.get_or_init(Self::default)
     }
 
-    pub fn state_path(&self) -> &Path {
-        &self.state_path
+    pub fn state_dir(&self) -> &Path {
+        &self.state_dir
     }
 
     pub fn dolphin_path(&self) -> &Path {
@@ -49,7 +50,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             dolphin_path: "./resources/dolphins.txt".into(),
-            state_path: "./state/state.json".into(),
+            state_dir: "./state/".into(),
         }
     }
 }
