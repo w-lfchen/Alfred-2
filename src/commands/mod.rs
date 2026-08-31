@@ -23,7 +23,11 @@ type Context<'a> = poise::Context<'a, Data, anyhow::Error>;
 /// returns whether the command is allowed to run
 pub async fn command_check(ctx: Context<'_>) -> Result<bool, anyhow::Error> {
     Ok(if let Some(id) = ctx.guild_id() {
-        db::is_enabled(ctx.data().pool(), id, &ctx.command().name).await?
+        let enabled = db::is_enabled(ctx.data().pool(), id, &ctx.command().name).await?;
+        if !enabled {
+            ctx.say("command is disabled").await?;
+        }
+        enabled
     } else {
         true
     })
