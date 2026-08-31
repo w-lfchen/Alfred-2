@@ -16,7 +16,7 @@ const DB_PATH: &str = "db.sqlite";
 /// - create the file if needed
 /// - run the table setup
 pub async fn setup_db() -> Result<SqlitePool, anyhow::Error> {
-    let mut db_path = PathBuf::from(Config::get().state_path());
+    let mut db_path = PathBuf::from(Config::get().state_dir());
     db_path.push(DB_PATH);
     let db_path = db_path;
     // ensure db file exists
