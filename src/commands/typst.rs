@@ -118,7 +118,7 @@ fn format_diagnostics(diags: &[SourceDiagnostic]) -> String {
                 Severity::Error => "error",
                 Severity::Warning => "warning",
             },
-            &s.message,
+            s.message,
         )
     })
 }

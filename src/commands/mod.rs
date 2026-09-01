@@ -345,7 +345,7 @@ pub async fn typst(
     Ok(())
 }
 
-/// if the document text (excluding leading whitespace) is a discord code block (i.e. starts and ends with ` or ```),
+/// if the document text (excluding leading whitespace) is a discord code block, i.e. starts and ends with a single or triple backtick (\`),
 /// this function strips the code block and leading/trailing whitespace and returns a new [String].
 /// otherwise, the document is returned unchanged.
 fn trim_typst_doc(document: String) -> String {
